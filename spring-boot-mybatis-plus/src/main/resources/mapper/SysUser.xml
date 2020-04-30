@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.soft1851.springboot.mybatis.plus.mapper.SysUserMapper">
+
+    <select id="getUserRolePermissionByUserId" parameterType="String" resultType="map">
+        SELECT t1.user_name, t1.real_name,t1.create_time, t2.role_id, t2.role_name FROM user_role t3
+        LEFT JOIN sys_user t1
+        ON t1.user_id = t3.user_id
+        LEFT JOIN sys_role t2
+        ON t2.role_id = t3.role_id
+        WHERE t3.user_id = #{userId}
+    </select>
+
+</mapper>

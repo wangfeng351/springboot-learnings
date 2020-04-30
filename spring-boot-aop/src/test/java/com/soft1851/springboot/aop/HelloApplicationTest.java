@@ -29,12 +29,12 @@ public class HelloApplicationTest {
 
     //预加载内容，初始化mockMvc
     @BeforeEach
-    public void setup() throws Exception{
+    public void setup() throws Exception {
         mockMvc = MockMvcBuilders.webAppContextSetup(this.context).build();
     }
 
     @Test
-    public void hello() throws Exception{
+    public void hello() throws Exception {
        /*
         * 1、mockMvc.perform执行一个请求。
         * 2、MockMvcRequestBuilders.get("XXX")构造一个请求。
@@ -58,13 +58,13 @@ public class HelloApplicationTest {
 //                .andReturn();
 //        System.out.println("返回的结果：" + result.getResponse().getContentAsString());
 
-        MvcResult result1 = mockMvc.perform(MockMvcRequestBuilders
-                .get("/api/hello")
-                .header("token", "123456"))
-                .andExpect(MockMvcResultMatchers.status().isOk())
-                .andExpect(MockMvcResultMatchers.content().string("hello方法访问成功"))
-                .andDo(MockMvcResultHandlers.print())
-                .andReturn();
-        System.out.println("返回的结果：" + result1.getResponse().getContentAsString());
+//        MvcResult result1 = mockMvc.perform(MockMvcRequestBuilders
+//                .get("/api/hello")
+//                .header("token", "123456"))
+//                .andExpect(MockMvcResultMatchers.status().isOk())
+//                .andExpect(MockMvcResultMatchers.content().string("hello方法访问成功"))
+//                .andDo(MockMvcResultHandlers.print())
+//                .andReturn();
+//        System.out.println("返回的结果：" + result1.getResponse().getContentAsString());
     }
 }

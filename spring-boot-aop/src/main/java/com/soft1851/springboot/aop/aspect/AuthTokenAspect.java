@@ -1,6 +1,11 @@
 package com.soft1851.springboot.aop.aspect;
 
 import com.soft1851.springboot.aop.annotation.AuthToken;
+import com.soft1851.springboot.aop.common.Result;
+import com.soft1851.springboot.aop.common.ResultCode;
+import com.soft1851.springboot.aop.entity.UserRole;
+import com.soft1851.springboot.aop.mapper.SysUserMapper;
+import com.soft1851.springboot.aop.mapper.UserRoleMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.aspectj.lang.JoinPoint;
 import org.aspectj.lang.ProceedingJoinPoint;
@@ -10,9 +15,11 @@ import org.springframework.web.context.request.RequestAttributes;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
+import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -25,59 +32,16 @@ import java.util.Map;
 @Component
 @Slf4j
 public class AuthTokenAspect {
-
-    private ThreadLocal<Map<String, Object>> threadLocal = new ThreadLocal<>();
+    @Resource
+    private SysUserMapper mapper;
 
     /**
      * 配置加上自定义注解的方法为切点
+     *
      * @param authToken
      */
     @Pointcut("@annotation(authToken)")
     public void doAuthToken(AuthToken authToken) {
-    }
-
-    @Pointcut("execution(public * com.soft1851.springboot.aop.controller..*.*(..))")
-    public void webLog(){
-    }
-
-    @Before(value = "webLog()")
-    public void doBefore(JoinPoint joinPoint){
-        //接收请求，获得请求的request对象
-        RequestAttributes at = RequestContextHolder.getRequestAttributes();
-        ServletRequestAttributes sra = (ServletRequestAttributes) at;
-        //以下通过连接点和注解获取相关信息
-        assert sra != null;
-        HttpServletRequest request = sra.getRequest();
-        log.info("token:" + request.getHeader("token"));
-        log.info("请求URI:" + request.getRequestURI());
-        log.info("请求URL:" + request.getRequestURL());
-        log.info("请求头的User-Agent:" + request.getHeader("User-Agent"));
-        log.info("请求方法:" + request.getMethod());
-        log.info("请求地址:" + request.getRemoteAddr());
-        log.info("连接点对象通过反射获得类名和方法名" + joinPoint.getSignature().getDeclaringTypeName() + "."
-                + joinPoint.getSignature().getName());
-        log.info("AOP拦截获得参数:" + Arrays.toString(joinPoint.getArgs()));
-        // 定义一个map用来记录日志信息，并将其put入threadLocal
-        Map<String, Object> map = new HashMap<>(16);
-        map.put("uri", request.getRequestURI());
-        map.put("url", request.getRequestURL());
-        map.put("user-agent", request.getHeader("User-Agent"));
-        map.put("request-method", request.getMethod());
-        map.put("remote-address", request.getRemoteAddr());
-        map.put("class-method", joinPoint.getSignature().getDeclaringTypeName() +  "."
-                + joinPoint.getSignature().getName());
-        map.put("arguments", Arrays.toString(joinPoint.getArgs()));
-        threadLocal.set(map);
-    }
-
-    @AfterReturning(value = "webLog() && @annotation(authToken)", returning = "ret")
-    public void doAfterReturning(AuthToken authToken, Object ret) throws Throwable {
-        //从当前线程变量取出数据
-        Map<String, Object> threadInfo = threadLocal.get();
-        //将请求的目标方法getHello()的执行的返回结果存入对象
-        threadInfo.put("result", ret);
-        // 处理完成请求，返回内容
-        log.info("RESPONSE : " + ret);
     }
 
 
@@ -85,34 +49,42 @@ public class AuthTokenAspect {
      * object是指controller方法返回的类型
      */
     @Around(value = "doAuthToken(authToken)", argNames = "pjp,authToken")
-    public Object doAround(ProceedingJoinPoint pjp,AuthToken authToken) throws Throwable{
+    public Object doAround(ProceedingJoinPoint pjp, AuthToken authToken) throws Throwable {
         ServletRequestAttributes sra = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
         assert sra != null;
         HttpServletRequest request = sra.getRequest();
         // 取得注解中的role_name的值
         String[] roleNames = authToken.role_name();
-        //没有role的值
-        if (roleNames.length <= 1) {
-            // 只需认证
-            String id = request.getHeader("id");
-            // 如果id为空， 证明用户没有登录
-            if (id != null) {
-                // 返回controller方法的值
-                return pjp.proceed();
-            }
-            return "请先登录";
-        }else {
-            // 请求头中取出role，验证身份
-            String role = request.getHeader("role");
-            log.info(role);
-            for (String roleName : roleNames) {
-                if (roleName.equals(role)) {
-                    // 身份匹配成功
+        // 取出header中的token值
+        String token = request.getHeader("token");
+        // 进行token认证
+        if (token != null) {
+            // 为authToken.role_name()的值为一个及以下的接口进行鉴权
+            if (roleNames.length <= 1) {
+                String id = request.getParameter("id");
+                Map<String, Object> map = mapper.getUserById(id);
+                // 取出用户的角色名称信息进行鉴权
+                if (roleNames[0].equals(map.get("role_name"))) {
+                    // 返回controller方法的值
                     return pjp.proceed();
                 }
+                return Result.failure(ResultCode.PERMISSION_NO_ACCESS);
+            } else {
+                // 获取请求参数id,通过id查询到该用户角色信息
+                String id = request.getParameter("id");
+                // 根据id查询用户的信息
+                Map<String, Object> map = mapper.getUserById(id);
+                for (String roleName : roleNames) {
+                    //取出用户的角色名称信息进行鉴权
+                    if (roleName.equals(map.get("role_name"))) {
+                        // 身份匹配成功，返回目标方法执行之后返回的值
+                        return pjp.proceed();
+                    }
+                }
+                return Result.failure(ResultCode.PERMISSION_NO_ACCESS);
             }
-            return "权限不足，无法访问";
         }
-
+        // 没有token则返回未登录信息
+        return Result.failure(ResultCode.USER_NOT_SIGN_IN);
     }
 }

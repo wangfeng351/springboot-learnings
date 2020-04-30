@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.soft1851.springboot.mybatis.plus.mapper.RolePermissionMapper">
+
+    <select id="getRolePermissionByRoleId" resultType="map">
+        SELECT t1.p_id, t1.parent_id, t1.p_name, t1.icon, t1.path FROM role_permission t2 LEFT JOIN sys_permission t1
+                                                                                                    ON t2.permission_id = t1.p_id
+        WHERE t2.role_id = #{roleId}
+    </select>
+
+</mapper>
