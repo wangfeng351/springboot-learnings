@@ -22,6 +22,6 @@ public class SampleJob extends QuartzJobBean {
     @Override
     protected void executeInternal(JobExecutionContext context)
             throws JobExecutionException {
-        System.out.println(String.format("Hello %s!", this.name));
+//        System.out.println(String.format("Hello %s!", this.name));
     }
 }

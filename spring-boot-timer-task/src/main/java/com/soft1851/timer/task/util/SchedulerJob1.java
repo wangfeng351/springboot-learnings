@@ -14,28 +14,28 @@ import java.io.IOException;
  * @Version 1.0
  */
 public class SchedulerJob1 {
-    @Resource
-    private SampleScheduler sampleScheduler;
-
-    public void test() throws SchedulerException, IOException {
-        JobDetail job = sampleScheduler.sampleJobDetail();
-
-        job.getJobDataMap().put("name", "quertz"); //加入属性name到JobDataMap
-
-        //定义一个每秒执行一次的SimpleTrigger
-        Trigger trigger = sampleScheduler.sampleJobTrigger();
-
-        Scheduler sche = StdSchedulerFactory.getDefaultScheduler();
-        sche.scheduleJob(job, trigger);
-
-        sche.start();
-
-        System.in.read();
-
-        sche.shutdown();
-    }
-
-    public static void main(String[] args) throws IOException, SchedulerException {
-        new SchedulerJob1().test();
-    }
+//    @Resource
+//    private SampleScheduler sampleScheduler;
+//
+//    public void test() throws SchedulerException, IOException {
+//        JobDetail job = sampleScheduler.sampleJobDetail();
+//
+//        job.getJobDataMap().put("name", "quertz"); //加入属性name到JobDataMap
+//
+//        //定义一个每秒执行一次的SimpleTrigger
+//        Trigger trigger = sampleScheduler.sampleJobTrigger();
+//
+//        Scheduler sche = StdSchedulerFactory.getDefaultScheduler();
+//        sche.scheduleJob(job, trigger);
+//
+//        sche.start();
+//
+//        System.in.read();
+//
+//        sche.shutdown();
+//    }
+//
+//    public static void main(String[] args) throws IOException, SchedulerException {
+//        new SchedulerJob1().test();
+//    }
 }
